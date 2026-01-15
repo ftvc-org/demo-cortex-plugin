@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+.cm-editor .cm-cursor {
+  border-left: 2px solid var(--cortex-plugin-primary);
+}
+
+.swatch-container {
+  display: flex;
+  align-items: end;
+  gap: 8px;
+  font-family: monospace;
+}
+
+.swatch-container > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0;
+}
+
+.swatch {
+  border: 1px solid var(--cortex-plugin-border);
+  height: 25px;
+  width: 25px;
+  border-radius: 0.375rem;
+}
+
+.swatch-label {
+  margin: 0 0 4px 0;
+  font-size: 0.75rem;
+  font-weight: 300;
+  font-style: italic;
+  line-height: 1.25rem;
+}
+
+.swatch--cortex-plugin-background {
+  background-color: var(--cortex-plugin-background);
+}
+.swatch--cortex-plugin-foreground {
+  background-color: var(--cortex-plugin-foreground);
+}
+.swatch--cortex-plugin-primary {
+  background-color: var(--cortex-plugin-primary);
+}
+.swatch--cortex-plugin-secondary {
+  background-color: var(--cortex-plugin-secondary);
+}
+.swatch--cortex-plugin-muted {
+  background-color: var(--cortex-plugin-muted);
+}
+.swatch--cortex-plugin-accent {
+  background-color: var(--cortex-plugin-accent);
+}
+.swatch--cortex-plugin-accent {
+  background-color: var(--cortex-plugin-accent);
+}
+.swatch--cortex-plugin-destructive {
+  background-color: var(--cortex-plugin-destructive);
+}
+.swatch--cortex-plugin-destructive-foreground {
+  background-color: var(--cortex-plugin-destructive-foreground);
+}
+.swatch--cortex-plugin-border {
+  background-color: var(--cortex-plugin-border);
+}
+.swatch--cortex-plugin-input {
+  background-color: var(--cortex-plugin-input);
+}
+.swatch--cortex-plugin-ring {
+  background-color: var(--cortex-plugin-ring);
+}
