@@ -34,7 +34,7 @@ jobs:
         path: ./dist
     - name: Update Plugin
       env:
-        CORTEX_API_KEY: ${{ secrets.SONAR_TOKEN }}    
+        CORTEX_API_KEY: ${{ secrets.CORTEX_API_KEY }}    
       run: |
         ls -latr ./dist
         # Read and safely encode file contents
