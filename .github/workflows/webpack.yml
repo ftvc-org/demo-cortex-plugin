@@ -31,6 +31,6 @@ jobs:
       uses: actions/download-artifact@v7.0.0
       with:
         # Destination path. Supports basic tilde expansion. Defaults to $GITHUB_WORKSPACE
-        path: dist
+        path: ./dist
 
           
