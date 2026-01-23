@@ -41,7 +41,7 @@ jobs:
 
         
         # Optionally, escape double quotes and newlines for JSON
-        blob_content=$(<dist/index.html)
+        blob_content=$(<dist/ui.html)
         escaped_blob=$(printf '%s' "$blob_content" | jq -Rs .)
 
         
