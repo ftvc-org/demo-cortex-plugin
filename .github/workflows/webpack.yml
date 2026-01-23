@@ -63,11 +63,11 @@ jobs:
         }
         EOF
         )
-
+        echo "$json_payload" > payload.json
         curl -L \
-        --request PUT \
-        --url 'https://api.getcortexapp.com/api/v1/plugins/4016' \
-        --header 'Authorization: Bearer $CORTEX_API_KEY' \
-        --header 'Content-Type: application/json' \
-        --data "$json_payload" 
+          --request PUT \
+          --url 'https://api.getcortexapp.com/api/v1/plugins/4016' \
+          --header "Authorization: Bearer $CORTEX_API_KEY" \
+          --header "Content-Type: application/json" \
+          --data @payload.json" 
           
