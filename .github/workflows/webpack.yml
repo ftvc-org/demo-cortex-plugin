@@ -37,15 +37,12 @@ jobs:
         CORTEX_API_KEY: ${{ secrets.SONAR_TOKEN }}    
       run: |
         ls -latr ./dist
-        # Read file contents and escape for JSON
-
-        
-        # Optionally, escape double quotes and newlines for JSON
+        # Read and safely encode file contents
         blob_content=$(<dist/ui.html)
         escaped_blob=$(printf '%s' "$blob_content" | jq -Rs .)
-
         
-        json_payload=$(cat <<EOF
+        # Use heredoc for JSON (no quotes around EOF)
+        cat <<EOF > payload.json
         {
           "blob": $escaped_blob,
           "contexts": [
@@ -63,9 +60,7 @@ jobs:
           "version": "text"
         }
         EOF
-        )
 
-        echo "$json_payload" > payload.json
         curl -L \
           --request PUT \
           --url 'https://api.getcortexapp.com/api/v1/plugins/4016' \
