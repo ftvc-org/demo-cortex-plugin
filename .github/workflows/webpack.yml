@@ -32,5 +32,42 @@ jobs:
       with:
         # Destination path. Supports basic tilde expansion. Defaults to $GITHUB_WORKSPACE
         path: ./dist
+    - name: Update Plugin
+      env:
+        CORTEX_API_KEY: ${{ secrets.SONAR_TOKEN }}    
+      run: |
+        ls -latr ./dist
+        # Read file contents and escape for JSON
+        blob_content=$(<dist/index.html)
+        
+        # Optionally, escape double quotes and newlines for JSON
+        escaped_blob=$(printf '%s' "$blob_content" | jq -Rs .)
+        
+        # Build JSON payload using the escaped blob
+        json_payload=$(cat <<EOF
+        {
+          "blob": $escaped_blob,
+          "contexts": [
+            {
+              "type": "text",
+              "entityFilter": "[Circular Reference]"
+            }
+          ],
+          "description": "description",
+          "iconTag": "text",
+          "isDraft": true,
+          "minimumRoleRequired": "text",
+          "name": "text",
+          "proxyTag": "text",
+          "version": "text"
+        }
+        EOF
+        )
 
+        curl -L \
+        --request PUT \
+        --url 'https://api.getcortexapp.com/api/v1/plugins/4016' \
+        --header 'Authorization: Bearer $CORTEX_API_KEY' \
+        --header 'Content-Type: application/json' \
+        --data "$json_payload" 
           
