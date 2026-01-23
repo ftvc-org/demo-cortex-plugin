@@ -47,21 +47,21 @@ jobs:
           "blob": $escaped_blob,
           "contexts": [
             {
-              "type": "text",
+              "type": "GLOBAL",
               "entityFilter": "[Circular Reference]"
             }
           ],
           "description": "description",
           "iconTag": "text",
           "isDraft": true,
-          "minimumRoleRequired": "text",
-          "name": "text",
+          "minimumRoleRequired": "VIEWER",
+          "name": "Test",
           "proxyTag": "text",
           "version": "text"
         }
         EOF
 
-        curl -L \
+        curl -L -v \
           --request PUT \
           --url 'https://api.getcortexapp.com/api/v1/plugins/test' \
           --header "Authorization: Bearer $CORTEX_API_KEY" \
