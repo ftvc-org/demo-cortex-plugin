@@ -85,12 +85,22 @@ const FRAMEWORKS = [
 export const Components: React.FC = () => {
   const [checked, setChecked] = useState(false);
   const [values, setValues] = useState<string[]>([]);
-  return (
-    <div>
-        <button className="btn">Protect Main Branch</button>
-        <button className="btn">Add Fortify Scan</button>
-        <button className="btn">Add Sonatype Scan</button>
+  return ( 
+  <div>
+      style={{
+        height: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+      <div style={{ display: "flex", gap: "20px" }}>
+        <button className="btn">Button One</button>
+        <button className="btn">Button Two</button>
+        <button className="btn">Button Three</button>
+        <button className="btn">Button Four</button>
+      </div>
     </div>
+
   );
 };
 
