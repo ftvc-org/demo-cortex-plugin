@@ -91,7 +91,7 @@ export const Components: React.FC = () => {
         height: "100vh",
         display: "flex",
         justifyContent: "center",
-        alignItems: "center",
+        alignItems: "center"
       }}
     >
       <div style={{ display: "flex", gap: "20px" }}>
