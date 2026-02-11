@@ -122,13 +122,13 @@ export const Components: React.FC = () => {
         <CardContent>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             <Button onClick={onDashboard}>Add .fmk file</Button>
-            <Button variant="secondary" onClick={onAnalytics}>
+            <Button onClick={onAnalytics}>
               Protect Main Branch
             </Button>
-            <Button variant="outline" onClick={onSettings}>
+            <Button onClick={onSettings}>
               Add README.md file
             </Button>
-            <Button variant="destructive" onClick={onReports}>
+            <Button onClick={onReports}>
               Add Owners
             </Button>
           </div>
