@@ -85,6 +85,15 @@ const FRAMEWORKS = [
 export const Components: React.FC = () => {
   const [checked, setChecked] = useState(false);
   const [values, setValues] = useState<string[]>([]);
+  
+const onDashboard = () => alert("Dashboard clicked");
+  const onAnalytics = () => console.log("Analytics clicked");
+  const onSettings = () => {
+    // Example: open a new tab or navigate in-app
+    window.open("https://example.com/settings", "_blank");
+  };
+  const onReports = () => alert("Reports clicked");
+
   return ( 
       <div
           className="twp-root"
