@@ -88,7 +88,7 @@ export const Components: React.FC = () => {
   return (
     <div className="flex flex-col gap-4">
       <Section>
-        <Heading>Badges</Heading>
+        <Heading>Badges Sample</Heading>
         <Subsection className="flex-row flex-wrap gap-2">
           <Badge>Default</Badge>
           <Badge variant="secondary">Secondary</Badge>
