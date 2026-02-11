@@ -90,7 +90,6 @@ export const Components: React.FC = () => {
         <button className="btn">Protect Main Branch</button>
         <button className="btn">Add Fortify Scan</button>
         <button className="btn">Add Sonatype Scan</button>
-      </div>
     </div>
   );
 };
