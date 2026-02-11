@@ -86,7 +86,7 @@ export const Components: React.FC = () => {
   const [checked, setChecked] = useState(false);
   const [values, setValues] = useState<string[]>([]);
   
-const onDashboard = () => alert("Dashboard clicked");
+  const onDashboard = () => alert("Dashboard clicked");
   const onAnalytics = () => console.log("Analytics clicked");
   const onSettings = () => {
     // Example: open a new tab or navigate in-app
@@ -121,15 +121,15 @@ const onDashboard = () => alert("Dashboard clicked");
         </CardHeader>
         <CardContent>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <Button onClick={onDashboard}>Button One</Button>
+            <Button onClick={onDashboard}>Add .fmk file</Button>
             <Button variant="secondary" onClick={onAnalytics}>
-              Button Two
+              Protect Main Branch
             </Button>
             <Button variant="outline" onClick={onSettings}>
-              Button Three
+              Add README.md file
             </Button>
             <Button variant="destructive" onClick={onReports}>
-              Button Four
+              Add Owners
             </Button>
           </div>
         </CardContent>
