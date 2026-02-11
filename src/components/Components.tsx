@@ -87,12 +87,11 @@ export const Components: React.FC = () => {
   const [values, setValues] = useState<string[]>([]);
   return ( 
       <div
-          className="twp-root" // if you’re namespacing Tailwind/preflight, keep your root class; safe to remove if not needed
+          className="twp-root"
           style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            // Soft background; you can swap for a solid if you prefer
             background:
               "linear-gradient(135deg, rgba(59,130,246,0.08), rgba(16,185,129,0.08))",
             padding: 16,
@@ -107,6 +106,7 @@ export const Components: React.FC = () => {
             "0 10px 15px -3px rgba(0,0,0,0.10), 0 4px 6px -2px rgba(0,0,0,0.05)",
           background: "#fff", // keeps it readable in both light/dark themes injected by Cortex
         }}
+        >
         <CardHeader>
           <CardTitle>Quick Actions</CardTitle>
         </CardHeader>
