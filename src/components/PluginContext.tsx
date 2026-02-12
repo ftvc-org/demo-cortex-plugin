@@ -40,24 +40,31 @@ import useScorecardNextSteps, {
   RuleToComplete,
 } from "../hooks/useScorecardNextSteps";
 
-export interface NextStepsButtonsProps {
-  /** Scorecard tag, e.g. "empty-scorecard-with-levels" */
+// components/NextStepsDebugPanel.tsx
+import React from "react";
+import useCortexNextStepsUrlAndResponse, {
+  RuleToComplete,
+} from "../hooks/useCortexNextStepsUrlAndResponse";
+
+export interface NextStepsDebugPanelProps {
   scorecardTag: string;
-  /** Entity tag, e.g. "maven-service" */
-  entityTag: string;
-  /** Cortex Bearer token */
+  /** If omitted, hook will use context.entity.tag */
+  entityTag?: string;
+  /** Bearer token */
   token: string;
-  /** Optional click handler when a rule button is clicked */
+  /** Optional click handler for rule buttons */
   onRuleClick?: (rule: RuleToComplete) => void;
 }
 
-const NextStepsButtons: React.FC<NextStepsButtonsProps> = ({
+const NextStepsDebugPanel: React.FC<NextStepsDebugPanelProps> = ({
   scorecardTag,
   entityTag,
   token,
   onRuleClick,
 }) => {
   const {
+    url,
+    data,
     rulesToComplete,
     currentLevel,
     nextLevel,
@@ -65,52 +72,44 @@ const NextStepsButtons: React.FC<NextStepsButtonsProps> = ({
     isFetching,
     error,
     refetch,
-  } = useScorecardNextSteps(
+  } = useCortexNextStepsUrlAndResponse(
     { scorecardTag, entityTag },
     { token }
   );
 
   if (isLoading) return <div>Loading next steps…</div>;
-  if (error) return <div>Error: {error.message}</div>;
-
-  const handleClick = (rule: RuleToComplete) => {
-    if (onRuleClick) {
-      onRuleClick(rule);
-    } else {
-      // Default: log or navigate if you have a route per rule
-      // e.g., window.open to docs or config page
-      console.log("Rule clicked:", rule);
-    }
-  };
+  if (error) return <div style={{ color: "crimson" }}>Error: {error.message}</div>;
 
   return (
     <div style={{ display: "grid", gap: 12 }}>
+      {/* Exact URL being called */}
+      <div>
+        <strong>URL:</strong>{" "}
+        <code style={{ wordBreak: "break-all" }}>{url || "—"}</code>
+        <button style={{ marginLeft: 8 }} onClick={refetch}>
+          Refresh
+        </button>
+        {isFetching && <small style={{ marginLeft: 8 }}>Refreshing…</small>}
+      </div>
+
+      {/* Level summary */}
       {(currentLevel || nextLevel) && (
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <strong>Level:</strong>
-          <span>
-            {currentLevel?.name ?? "—"} ({currentLevel?.number ?? "—"})
-          </span>
-          <span>→</span>
-          <span>
-            {nextLevel?.name ?? "—"} ({nextLevel?.number ?? "—"})
-          </span>
-          {isFetching && <small> Refreshing…</small>}
-          <button onClick={refetch} style={{ marginLeft: "auto" }}>
-            Refresh
-          </button>
+        <div>
+          <strong>Level:</strong>{" "}
+          {currentLevel?.name ?? "—"} ({currentLevel?.number ?? "—"}) →{" "}
+          {nextLevel?.name ?? "—"} ({nextLevel?.number ?? "—"})
         </div>
       )}
 
-      {rulesToComplete.length === 0 ? (
-        <div>No rules to complete 🎉</div>
-      ) : (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+      {/* Rule buttons using title as label */}
+      <div>
+        <strong>Rules to complete ({rulesToComplete.length})</strong>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
           {rulesToComplete.map((rule) => (
             <button
               key={rule.identifier}
-              onClick={() => handleClick(rule)}
               title={rule.description ?? rule.expression ?? rule.title}
+              onClick={() => (onRuleClick ? onRuleClick(rule) : console.log("Rule:", rule))}
               style={{
                 padding: "8px 12px",
                 borderRadius: 8,
@@ -122,10 +121,27 @@ const NextStepsButtons: React.FC<NextStepsButtonsProps> = ({
               {rule.title}
             </button>
           ))}
+          {rulesToComplete.length === 0 && <div>No pending rules 🎉</div>}
         </div>
-      )}
+      </div>
+
+      {/* Pretty JSON response */}
+      <details open>
+        <summary><strong>Raw response</strong></summary>
+        <pre
+          style={{
+            background: "#0b1021",
+            color: "#e6edf3",
+            padding: 12,
+            borderRadius: 8,
+            overflow: "auto",
+          }}
+        >
+{JSON.stringify(data ?? {}, null, 2)}
+        </pre>
+      </details>
     </div>
   );
 };
 
-export default NextStepsButtons;
+export default NextStepsDebugPanel;

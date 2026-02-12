@@ -1,87 +1,84 @@
-// hooks/useScorecardNextSteps.ts
+// hooks/useCortexNextStepsUrlAndResponse.ts
 import { useMemo } from "react";
 import { useQuery, type UseQueryOptions } from "@tanstack/react-query";
+import { usePluginContextProvider } from "../components/PluginContextProvider";
 
 export interface ScoreLevel {
   name: string;
   number: number;
 }
-
 export interface LevelWrapper {
   level: ScoreLevel;
 }
-
 export interface RuleToComplete {
   identifier: string;
   title: string;
   description?: string | null;
   expression?: string;
 }
-
 export interface NextStep {
   rulesToComplete: RuleToComplete[];
   currentLevel?: LevelWrapper;
   nextLevel?: LevelWrapper;
 }
-
 export interface NextStepsResponse {
   nextSteps: NextStep[];
 }
 
-export interface UseScorecardNextStepsParams {
-  /** Scorecard tag, e.g. "empty-scorecard-with-levels" */
+export interface UseCortexNextStepsParams {
+  /** e.g. "empty-scorecard-with-levels" */
   scorecardTag: string;
-  /** Entity tag, e.g. "maven-service" */
-  entityTag: string;
-  /** Cortex cloud base URL; defaults to official */
-  baseUrl?: string; // default: https://api.getcortexapp.com/api/v1
+  /**
+   * Optional: override entityTag if you don’t want to use context.entity.tag.
+   * If omitted, we’ll use your PluginContextProvider’s entity tag.
+   */
+  entityTag?: string;
 }
 
-export interface UseScorecardNextStepsOptions {
-  /** Bearer token for Cortex Cloud (required) */
+export interface UseCortexNextStepsOptions {
+  /** Cortex Cloud token (Bearer) */
   token: string;
-  /** React Query overrides (staleTime, retry, etc.) */
+  /** React Query options passthrough */
   queryOptions?: Omit<
     UseQueryOptions<NextStepsResponse, Error>,
     "queryKey" | "queryFn" | "enabled"
   >;
 }
 
-export interface UseScorecardNextStepsReturn {
-  /** Full API payload */
+export interface UseCortexNextStepsReturn {
+  /** The exact URL being called */
+  url: string;
+  /** Raw API response object */
   data: NextStepsResponse | undefined;
-  /** Flattened list of rules across all nextSteps entries */
+  /** Flattened list of rules */
   rulesToComplete: RuleToComplete[];
-  /** Convenience meta */
   currentLevel?: ScoreLevel;
   nextLevel?: ScoreLevel;
-  /** React Query state */
   isLoading: boolean;
   isFetching: boolean;
   error: Error | null;
   refetch: () => void;
 }
 
-/**
- * Fetches "next steps" (rules to complete) for a scorecard+entity from Cortex Cloud.
- * GET https://api.getcortexapp.com/api/v1/scorecards/{scorecardTag}/next-steps?entityTag={entityTag}
- */
-export const useScorecardNextSteps = (
-  params: UseScorecardNextStepsParams,
-  options: UseScorecardNextStepsOptions
-): UseScorecardNextStepsReturn => {
-  const { scorecardTag, entityTag, baseUrl = "https://api.getcortexapp.com/api/v1" } = params;
+export const useCortexNextStepsUrlAndResponse = (
+  params: UseCortexNextStepsParams,
+  options: UseCortexNextStepsOptions
+): UseCortexNextStepsReturn => {
+  const { scorecardTag } = params;
   const { token, queryOptions } = options;
 
+  const { entity } = usePluginContextProvider(); // assuming your provider exposes entity
+  const resolvedEntityTag = params.entityTag ?? entity?.tag ?? "";
+
   const url = useMemo(() => {
-    if (!scorecardTag || !entityTag) return "";
-    const encodedScorecard = encodeURIComponent(scorecardTag);
-    const encodedEntity = encodeURIComponent(entityTag);
-    return `${baseUrl}/scorecards/${encodedScorecard}/next-steps?entityTag=${encodedEntity}`;
-  }, [baseUrl, scorecardTag, entityTag]);
+    if (!scorecardTag || !resolvedEntityTag) return "";
+    return `https://api.getcortexapp.com/api/v1/scorecards/${encodeURIComponent(
+      scorecardTag
+    )}/next-steps?entityTag=${encodeURIComponent(resolvedEntityTag)}`;
+  }, [scorecardTag, resolvedEntityTag]);
 
   const query = useQuery<NextStepsResponse, Error>({
-    queryKey: ["scorecardNextSteps", url, Boolean(token)],
+    queryKey: ["cortexNextSteps", url, Boolean(token)],
     enabled: Boolean(url && token),
     retry: false,
     staleTime: 60_000,
@@ -95,19 +92,14 @@ export const useScorecardNextSteps = (
           Authorization: `Bearer ${token}`,
         },
       });
-
       if (!resp.ok) {
         const text = await resp.text().catch(() => "");
         throw new Error(
-          `Failed to fetch next steps (${resp.status} ${resp.statusText}) ${text || ""}`.trim()
+          `Failed to fetch Next Steps (${resp.status} ${resp.statusText}) ${text || ""}`.trim()
         );
       }
-
       const json = (await resp.json()) as NextStepsResponse;
-      // Normalize shape defensively
-      if (!Array.isArray(json?.nextSteps)) {
-        return { nextSteps: [] };
-      }
+      if (!Array.isArray(json?.nextSteps)) return { nextSteps: [] };
       return json;
     },
     ...queryOptions,
@@ -115,20 +107,14 @@ export const useScorecardNextSteps = (
 
   const nextSteps = query.data?.nextSteps ?? [];
 
-  // Flatten all rules from all "nextSteps" items
-  const rulesToComplete: RuleToComplete[] = useMemo(
-    () =>
-      nextSteps.flatMap((ns) =>
-        Array.isArray(ns.rulesToComplete) ? ns.rulesToComplete : []
-      ),
-    [nextSteps]
-  );
+  const rulesToComplete =
+    nextSteps.flatMap(ns => ns.rulesToComplete ?? []) ?? [];
 
-  // If you want to show a single pair of levels, take them from the first item
   const currentLevel = nextSteps[0]?.currentLevel?.level;
   const nextLevel = nextSteps[0]?.nextLevel?.level;
 
   return {
+    url,
     data: query.data,
     rulesToComplete,
     currentLevel,
@@ -140,4 +126,4 @@ export const useScorecardNextSteps = (
   };
 };
 
-export default useScorecardNextSteps;
+export default useCortexNextStepsUrlAndResponse;
