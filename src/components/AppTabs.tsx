@@ -11,7 +11,7 @@ import {
   CardContent,
 } from "@cortexapps/react-plugin-ui";
 
-import Components from "./Components";
+// import Components from "./Components";
 import PluginContext from "./PluginContext";
 import EntityDetails from "./EntityDetails";
 import ColorSwatches from "./ColorSwatches";
