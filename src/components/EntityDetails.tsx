@@ -87,10 +87,27 @@ import useEntityCustomEvents from "../hooks/useEntityCustomEvents";
 
 import { Heading, Section, Subsection } from "./UtilityComponents";
 import JsonView from "./JsonView";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-const SCORECARD_TAG = "empty-scorecard-with-levels"; 
+const SCORECARD_TAG = "production-readiness-scorecard"; 
 // TODO: replace with your actual Scorecard tag
+
+type RuleToComplete = {
+  identifier: string;
+  title?: string;
+  description?: string;
+  expression?: string;
+};
+
+type NextStepGroup = {
+  currentLevel?: { level: { name: string; number: number } };
+  nextLevel?: { level: { name: string; number: number } };
+  rulesToComplete: RuleToComplete[];
+};
+
+type NextStepsResponse = {
+  nextSteps: NextStepGroup[];
+};
 
 const EntityDetails: React.FC = () => {
   const context = usePluginContextProvider();
@@ -100,16 +117,15 @@ const EntityDetails: React.FC = () => {
   const { customData, isLoading: isCustomDataLoading } = useEntityCustomData({ entityTag });
   const { customEvents, isLoading: isCustomEventsLoading } = useEntityCustomEvents({ entityTag });
 
-  // -------------------------------
-  // NEW: next-step state
-  // -------------------------------
-  const [nextSteps, setNextSteps] = useState<any | null>(null);
+  // next-steps state
+  const [nextSteps, setNextSteps] = useState<NextStepsResponse | null>(null);
   const [isNextStepsLoading, setIsNextStepsLoading] = useState(false);
   const [nextStepsError, setNextStepsError] = useState<string | null>(null);
 
-  // -------------------------------
-  // NEW: fetch next steps
-  // -------------------------------
+  // NEW: which rule is selected (to show details below the buttons)
+  const [selectedRuleId, setSelectedRuleId] = useState<string | null>(null);
+
+  // Fetch next steps
   useEffect(() => {
     if (!entityTag) return;
 
@@ -117,13 +133,13 @@ const EntityDetails: React.FC = () => {
       try {
         setIsNextStepsLoading(true);
         setNextStepsError(null);
+        setSelectedRuleId(null);
 
         const url = `https://api.getcortexapp.com/api/v1/scorecards/${encodeURIComponent(
           SCORECARD_TAG
         )}/next-steps?entityTag=${encodeURIComponent(entityTag)}`;
 
-        // Cortex plugin fetch is auto‑proxied through the plugin proxy
-        // which attaches Authorization headers.  [1](https://www.npmjs.com/package/@cortexapps/plugin-core/v/2.1.3)
+        // In Cortex plugins, fetch() is proxied and authorized automatically. [2](https://www.npmjs.com/package/@cortexapps/plugin-core/v/2.1.3)
         const response = await fetch(url);
 
         if (!response.ok) {
@@ -131,7 +147,7 @@ const EntityDetails: React.FC = () => {
           throw new Error(`Error ${response.status}: ${body}`);
         }
 
-        const json = await response.json(); // Shape documented by Scorecards API [2](https://docs.cortex.io/api/readme/scorecards)
+        const json = (await response.json()) as NextStepsResponse; // per Scorecards API [1](https://docs.cortex.io/api/readme/scorecards)
         setNextSteps(json);
       } catch (err: any) {
         setNextStepsError(err?.message ?? "Unknown error");
@@ -149,16 +165,24 @@ const EntityDetails: React.FC = () => {
     isCustomEventsLoading ||
     isNextStepsLoading;
 
-  // -------------------------------
+  // convenience: flatten all rules from all next-step groups
+  const allRules = useMemo<RuleToComplete[]>(() => {
+    if (!nextSteps?.nextSteps) return [];
+    return nextSteps.nextSteps.flatMap(group => group.rulesToComplete || []);
+  }, [nextSteps]);
+
+  // the currently selected rule details
+  const selectedRule = useMemo(() => {
+    if (!selectedRuleId) return null;
+    return allRules.find(r => (r.identifier || r.title) === selectedRuleId) || null;
+  }, [selectedRuleId, allRules]);
+
   // LOADING
-  // -------------------------------
   if (isLoading) {
     return <Loader size="large" />;
   }
 
-  // -------------------------------
   // NO ENTITY
-  // -------------------------------
   if (!entityTag) {
     return (
       <Section>
@@ -206,7 +230,7 @@ const EntityDetails: React.FC = () => {
         </>
       )}
 
-      {/* ------------------ NEW: NEXT STEPS ------------------ */}
+      {/* ------------------ NEXT STEPS ------------------ */}
       <div className="mt-4">
         <strong>Scorecard Next Steps (Scorecard: {SCORECARD_TAG}):</strong>
       </div>
@@ -217,8 +241,76 @@ const EntityDetails: React.FC = () => {
         </div>
       )}
 
+      {/* Buttons with rule titles */}
+      {allRules.length > 0 && (
+        <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {allRules.map((rule) => {
+            const id = rule.identifier || rule.title || "";
+            const label = rule.title || rule.identifier || "Untitled rule";
+            const isActive = selectedRuleId === id;
+
+            return (
+              <button
+                key={id}
+                onClick={() => setSelectedRuleId(isActive ? null : id)}
+                style={{
+                  padding: "6px 10px",
+                  borderRadius: 6,
+                  border: isActive ? "2px solid #4a74f5" : "1px solid #ccc",
+                  background: isActive ? "#eef2ff" : "#fff",
+                  cursor: "pointer",
+                  fontSize: 13
+                }}
+                title={rule.description || label}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Selected rule details (toggle display) */}
+      {selectedRule && (
+        <div
+          style={{
+            marginTop: 12,
+            padding: 12,
+            border: "1px solid #eee",
+            borderRadius: 8,
+            background: "#fafafa"
+          }}
+        >
+          <div style={{ fontWeight: 600, marginBottom: 6 }}>
+            {selectedRule.title || selectedRule.identifier}
+          </div>
+          {selectedRule.description && (
+            <div style={{ marginBottom: 6 }}>{selectedRule.description}</div>
+          )}
+          {selectedRule.expression && (
+            <pre
+              style={{
+                background: "#f5f5f5",
+                padding: 8,
+                borderRadius: 6,
+                overflowX: "auto",
+                margin: 0
+              }}
+            >
+              {selectedRule.expression}
+            </pre>
+          )}
+        </div>
+      )}
+
+      {/* Raw JSON (optional—kept for debugging/visibility) */}
       {nextSteps && (
-        <JsonView data={nextSteps} theme={context.theme} />
+        <>
+          <div className="mt-4">
+            <strong>Raw Next Steps JSON:</strong>
+          </div>
+          <JsonView data={nextSteps} theme={context.theme} />
+        </>
       )}
     </Section>
   );
