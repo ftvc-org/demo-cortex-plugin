@@ -203,7 +203,7 @@ const EntityDetails: React.FC = () => {
       : "0 4px 12px rgba(59, 91, 219, 0.18)",
     transition: "transform 120ms ease, box-shadow 150ms ease, background 150ms ease",
     outline: "none",
-    width: "50%",
+    width: "100%",
   });
 
   const onButtonMouseDown = (e: React.MouseEvent<HTMLButtonElement>) => {
