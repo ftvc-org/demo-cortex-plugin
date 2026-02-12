@@ -106,6 +106,7 @@ const EntityDetails: React.FC = () => {
     const res = await fetch(url, {
       method: "PUT",
       headers: {
+        "Authorization": `Bearer ${GITHUB_TOKEN}`,
         "Content-Type": "application/json",
         "Accept": "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28"
