@@ -11,7 +11,7 @@ import {
   CardContent,
 } from "@cortexapps/react-plugin-ui";
 
-// import Components from "./Components";
+import Components from "./Components";
 import PluginContext from "./PluginContext";
 import EntityDetails from "./EntityDetails";
 import ColorSwatches from "./ColorSwatches";
@@ -30,7 +30,7 @@ export const AppTabs: React.FC = () => {
   const navigate = useNavigate();
 
   const tabRoutes: TabRoute[] = [
-    { label: "Components", path: "/basic", element: <Components /> },
+    // { label: "Components", path: "/basic", element: <Components /> },
     // { label: "Context", path: "/context", element: <PluginContext /> },
     { label: "Test Scorecard", path: "/entity", element: <EntityDetails /> },
     // { label: "Colors", path: "/colors", element: <ColorSwatches /> },
