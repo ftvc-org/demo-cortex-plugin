@@ -14,11 +14,10 @@ import { useEffect, useMemo, useState } from "react";
 // -------------------------------
 // CONFIG: update these for your env
 // -------------------------------
-const SCORECARD_TAG = "empty-scorecard-with-levels";  // scorecard tag to evaluate
-const GITHUB_OWNER  = "ftvc-org";            // <-- set
-const GITHUB_REPO   = "sample-java-ab";                   // <-- set
-const BRANCH_NAME   = "main";    
-const [showModal, setShowModal] = useState(false);                    // <-- protect this branch
+const SCORECARD_TAG = "empty-scorecard-with-levels"; // scorecard tag to evaluate
+const GITHUB_OWNER = "ftvc-org";                      // <-- set
+const GITHUB_REPO = "sample-java-ab";                 // <-- set
+const BRANCH_NAME = "main";                           // <-- protect this branch
 
 // -------------------------------
 // TYPES for next-steps
@@ -32,7 +31,7 @@ type RuleToComplete = {
 
 type NextStepGroup = {
   currentLevel?: { level: { name: string; number: number } };
-  nextLevel?:   { level: { name: string; number: number } };
+  nextLevel?: { level: { name: string; number: number } };
   rulesToComplete: RuleToComplete[];
 };
 
@@ -59,6 +58,9 @@ const EntityDetails: React.FC = () => {
   const [isRunningAction, setIsRunningAction] = useState(false);
   const [actionStatus, setActionStatus] = useState<string | null>(null);
 
+  // modal state (✅ moved inside component)
+  const [showModal, setShowModal] = useState(false);
+
   // -------------------------------
   // Cortex helpers
   // -------------------------------
@@ -84,35 +86,35 @@ const EntityDetails: React.FC = () => {
   // GitHub: Branch Protection
   // -------------------------------
   // PUT /repos/{owner}/{repo}/branches/{branch}/protection
-  // See REST API docs for schema & headers. Requires admin.  (Use proxy to inject token+version header)
+  // NOTE: If your runtime injects the token via proxy, do NOT set headers here.
+  // If you need a token, add it from env (e.g., process.env.REACT_APP_GITHUB_TOKEN).
   const ensureBranchProtection = async () => {
     const url = `https://api.github.com/repos/${encodeURIComponent(GITHUB_OWNER)}/${encodeURIComponent(
       GITHUB_REPO
     )}/branches/${encodeURIComponent(BRANCH_NAME)}/protection`;
 
-    // Minimal, sensible defaults; extend as needed
     const policy = {
       enforce_admins: true,
       required_pull_request_reviews: {
         required_approving_review_count: 1,
         dismiss_stale_reviews: true,
-        require_code_owner_reviews: false
+        require_code_owner_reviews: false,
       },
       required_conversation_resolution: true,
       required_linear_history: true,
       allow_force_pushes: false,
-      allow_deletions: false
+      allow_deletions: false,
     };
 
     const res = await fetch(url, {
       method: "PUT",
+      // If a proxy injects headers, keep this lean:
       headers: {
-        "Authorization": `Bearer ${GITHUB_TOKEN}`,
         "Content-Type": "application/json",
         "Accept": "application/vnd.github+json",
-        "X-GitHub-Api-Version": "2022-11-28"
+        "X-GitHub-Api-Version": "2022-11-28",
       },
-      body: JSON.stringify(policy)
+      body: JSON.stringify(policy),
     });
     if (!res.ok) throw new Error(`Branch protection error ${res.status}: ${await res.text()}`);
     return res.json();
@@ -147,16 +149,17 @@ const EntityDetails: React.FC = () => {
     setIsRunningAction(true);
 
     try {
-      // 1) If title is "Branch Protection" → apply protection on 'main'
+      // 1) If title is "Branch Protection" → show modal
       if ((rule.title || "").trim().toLowerCase() === "branch protection") {
+        // If later you want to actually apply branch protection, uncomment:
         // setActionStatus(`Applying branch protection to ${GITHUB_OWNER}/${GITHUB_REPO}@${BRANCH_NAME}…`);
-        // await ensureBranchProtection(); // GitHub branch protection  [1](https://docs.cortex.io/streamline/plugins)
+        // await ensureBranchProtection();
         setShowModal(true);
       }
 
       // 2) Re-evaluate scorecard
       setActionStatus("Triggering scorecard evaluation…");
-      await evaluateScorecard(); // Cortex evaluate  [3](https://www.codegenes.net/blog/basic-http-and-bearer-token-authentication/)
+      await evaluateScorecard();
 
       // 3) Poll for fresh next steps
       setActionStatus("Refreshing next steps…");
@@ -199,16 +202,13 @@ const EntityDetails: React.FC = () => {
   }, [nextSteps]);
 
   // Current level name from first group (your example shows one group)
-  const currentLevelName =
-    nextSteps?.nextSteps?.[0]?.currentLevel?.level?.name ?? undefined;
+  const currentLevelName = nextSteps?.nextSteps?.[0]?.currentLevel?.level?.name ?? undefined;
 
   // No more steps?
   const noMoreSteps =
     !!nextSteps &&
-    (
-      nextSteps.nextSteps?.length === 0 ||
-      nextSteps.nextSteps?.every((g) => (g.rulesToComplete?.length || 0) === 0)
-    );
+    (nextSteps.nextSteps?.length === 0 ||
+      nextSteps.nextSteps?.every((g) => (g.rulesToComplete?.length || 0) === 0));
 
   if (isLoading) return <Loader size="large" />;
 
@@ -223,49 +223,50 @@ const EntityDetails: React.FC = () => {
 
   return (
     <Section>
-
+      {/* Modal with clickable link */}
       {showModal && (
-      <div
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          background: "rgba(0,0,0,0.4)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 9999
-        }}
-      >
         <div
           style={{
-            background: "#fff",
-            padding: 20,
-            borderRadius: 8,
-            width: 320,
-            textAlign: "center"
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            background: "rgba(0,0,0,0.4)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
           }}
         >
-          <h3>Action Required</h3>
-          <p>Please Follow the steps Given in below page to pass this rule</p>
-
-          <a
-            href="https://enterprise-confluence.onefiserv.net/"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ color: "#1a73e8", fontWeight: "bold" }}
+          <div
+            style={{
+              background: "#fff",
+              padding: 20,
+              borderRadius: 8,
+              width: 320,
+              textAlign: "center",
+            }}
           >
-            Open Page
-          </a>
+            <h3>Action Required</h3>
+            <p>Please follow the steps given in the page below to pass this rule.</p>
 
-          <div style={{ marginTop: 20 }}>
-            <button onClick={() => setShowModal(false)}>Close</button>
+            <a
+              href="https://enterprise-confluence.onefiserv.net/"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: "#1a73e8", fontWeight: "bold" }}
+            >
+              Open Page
+            </a>
+
+            <div style={{ marginTop: 20 }}>
+              <button onClick={() => setShowModal(false)}>Close</button>
+            </div>
           </div>
         </div>
-      </div>
-    )}
+      )}
+
       {actionStatus && (
         <div style={{ marginTop: 6, color: isRunningAction ? "#333" : "#5a5" }}>
           {actionStatus}
@@ -278,7 +279,15 @@ const EntityDetails: React.FC = () => {
 
       {/* Completed state */}
       {noMoreSteps && (
-        <div style={{ marginTop: 10, padding: 10, background: "#f0fff4", border: "1px solid #b7ebc6", borderRadius: 6 }}>
+        <div
+          style={{
+            marginTop: 10,
+            padding: 10,
+            background: "#f0fff4",
+            border: "1px solid #b7ebc6",
+            borderRadius: 6,
+          }}
+        >
           <strong>You have completed all the levels of this scorecard.</strong>
         </div>
       )}
@@ -311,7 +320,7 @@ const EntityDetails: React.FC = () => {
                       border: isActive ? "2px solid #4a74f5" : "1px solid #ccc",
                       background: isRunningAction ? "#f3f3f3" : isActive ? "#eef2ff" : "#fff",
                       cursor: isRunningAction ? "not-allowed" : "pointer",
-                      fontSize: 13
+                      fontSize: 13,
                     }}
                     title={rule.description || label}
                   >
