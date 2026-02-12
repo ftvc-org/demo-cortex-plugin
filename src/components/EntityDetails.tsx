@@ -136,7 +136,6 @@ const EntityDetails: React.FC = () => {
         setShowModal(true);
       }
 
-      setActionStatus("Done.");
     } catch (e: any) {
       setActionStatus(`Failed: ${e?.message ?? e}`);
     } finally {
@@ -274,6 +273,8 @@ const EntityDetails: React.FC = () => {
         </div>
       )}
 
+
+
       {actionStatus && (
         <div style={{ marginTop: 6, color: isRunningAction ? "#333" : "#5a5" }}>
           {actionStatus}
@@ -351,6 +352,7 @@ const EntityDetails: React.FC = () => {
         </>
       )}
     </Section>
+
   );
 };
 
