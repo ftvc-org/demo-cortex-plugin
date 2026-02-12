@@ -221,14 +221,6 @@ const EntityDetails: React.FC = () => {
 
   return (
     <Section>
-      <Heading>
-        <CardTitle>Entity Details</CardTitle>
-      </Heading>
-
-      {/* ---- NEXT STEPS UI ---- */}
-      <div className="mt-4">
-        <strong>Scorecard Next Steps (Scorecard: {SCORECARD_TAG}):</strong>
-      </div>
 
       {actionStatus && (
         <div style={{ marginTop: 6, color: isRunningAction ? "#333" : "#5a5" }}>
@@ -287,17 +279,6 @@ const EntityDetails: React.FC = () => {
           )}
         </>
       )}
-
-      {/* Optional: keep raw JSON for visibility */}
-      {nextSteps && (
-        <>
-          <div className="mt-4"><strong>Raw Next Steps JSON:</strong></div>
-          <JsonView data={nextSteps} theme={context.theme} />
-        </>
-      )}
-
-      {/* (Optional) Your existing descriptor/custom data/events blocks can remain below */}
-      {/* ... */}
     </Section>
   );
 };
