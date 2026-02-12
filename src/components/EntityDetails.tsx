@@ -14,10 +14,10 @@ import { useEffect, useMemo, useState } from "react";
 // -------------------------------
 // CONFIG: update these for your env
 // -------------------------------
-const SCORECARD_TAG = "empty-scorecard-with-levels"; // scorecard tag to evaluate
-const GITHUB_OWNER = "ftvc-org";                      // <-- set
-const GITHUB_REPO = "sample-java-ab";                 // <-- set
-const BRANCH_NAME = "main";                           // <-- protect this branch
+const SCORECARD_TAG = "empty-scorecard-with-levels"; 
+const GITHUB_OWNER = "ftvc-org";                      
+const GITHUB_REPO = "sample-java-ab";                 
+const BRANCH_NAME = "main";                           
 
 // -------------------------------
 // TYPES for next-steps
@@ -43,51 +43,38 @@ const EntityDetails: React.FC = () => {
   const context = usePluginContextProvider();
   const entityTag = context?.entity?.tag ?? "";
 
-  // (Keep your existing detail hooks if you still want them)
   const { entity, isLoading: isEntityLoading } = useEntityDescriptor({ entityTag });
   const { customData, isLoading: isCustomDataLoading } = useEntityCustomData({ entityTag });
   const { customEvents, isLoading: isCustomEventsLoading } = useEntityCustomEvents({ entityTag });
 
-  // next-steps state
   const [nextSteps, setNextSteps] = useState<NextStepsResponse | null>(null);
   const [isNextStepsLoading, setIsNextStepsLoading] = useState(false);
   const [nextStepsError, setNextStepsError] = useState<string | null>(null);
 
-  // selection + action status
   const [selectedRuleId, setSelectedRuleId] = useState<string | null>(null);
   const [isRunningAction, setIsRunningAction] = useState(false);
   const [actionStatus, setActionStatus] = useState<string | null>(null);
 
-  // modal state (✅ moved inside component)
   const [showModal, setShowModal] = useState(false);
 
-  // -------------------------------
-  // Cortex helpers
-  // -------------------------------
   const fetchNextSteps = async (): Promise<NextStepsResponse> => {
     const url = `https://api.getcortexapp.com/api/v1/scorecards/${encodeURIComponent(
       SCORECARD_TAG
     )}/next-steps?entityTag=${encodeURIComponent(entityTag)}`;
-    const res = await fetch(url); // proxied by Cortex plugin runtime
+    const res = await fetch(url);
     if (!res.ok) throw new Error(`Next-steps error ${res.status}: ${await res.text()}`);
-    return (await res.json()) as NextStepsResponse; // per Scorecards API
+    return (await res.json()) as NextStepsResponse;
   };
 
   const evaluateScorecard = async () => {
     const url = `https://api.getcortexapp.com/api/v1/scorecards/${encodeURIComponent(
       SCORECARD_TAG
     )}/entity/${encodeURIComponent(entityTag)}/scores`;
-    const res = await fetch(url, { method: "POST" }); // 200 or 409 (already evaluating)
+    const res = await fetch(url, { method: "POST" });
     if (res.status === 409) return;
     if (!res.ok) throw new Error(`Evaluate error ${res.status}: ${await res.text()}`);
   };
 
-  // -------------------------------
-  // GitHub: Branch Protection
-  // -------------------------------
-  // PUT /repos/{owner}/{repo}/branches/{branch}/protection
-  // NOTE: If your runtime injects the token via proxy, do NOT set headers here.
-  // If you need a token, add it from env (e.g., process.env.REACT_APP_GITHUB_TOKEN).
   const ensureBranchProtection = async () => {
     const url = `https://api.github.com/repos/${encodeURIComponent(GITHUB_OWNER)}/${encodeURIComponent(
       GITHUB_REPO
@@ -108,10 +95,9 @@ const EntityDetails: React.FC = () => {
 
     const res = await fetch(url, {
       method: "PUT",
-      // If a proxy injects headers, keep this lean:
       headers: {
         "Content-Type": "application/json",
-        "Accept": "application/vnd.github+json",
+        Accept: "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
       },
       body: JSON.stringify(policy),
@@ -120,9 +106,6 @@ const EntityDetails: React.FC = () => {
     return res.json();
   };
 
-  // -------------------------------
-  // Poll until fresh next steps are available / empty
-  // -------------------------------
   const pollNextStepsUntilUpdated = async (maxAttempts = 10, intervalMs = 1500) => {
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       const latest = await fetchNextSteps();
@@ -131,16 +114,13 @@ const EntityDetails: React.FC = () => {
       const remaining =
         latest.nextSteps?.reduce((acc, g) => acc + (g.rulesToComplete?.length || 0), 0) || 0;
 
-      if (remaining === 0) return latest; // completed
+      if (remaining === 0) return latest;
       await new Promise((r) => setTimeout(r, intervalMs));
     }
-    // final read
+
     return await fetchNextSteps();
   };
 
-  // -------------------------------
-  // One-click handler
-  // -------------------------------
   const handleRuleClick = async (rule: RuleToComplete) => {
     if (isRunningAction) return;
 
@@ -149,21 +129,12 @@ const EntityDetails: React.FC = () => {
     setIsRunningAction(true);
 
     try {
-      // 1) If title is "Branch Protection" → show modal
       if ((rule.title || "").trim().toLowerCase() === "branch protection") {
-        // If later you want to actually apply branch protection, uncomment:
-        // setActionStatus(`Applying branch protection to ${GITHUB_OWNER}/${GITHUB_REPO}@${BRANCH_NAME}…`);
-        // await ensureBranchProtection();
         setShowModal(true);
       }
-
-      // 2) Re-evaluate scorecard
-      setActionStatus("Triggering scorecard evaluation…");
-      await evaluateScorecard();
-
-      // 3) Poll for fresh next steps
-      setActionStatus("Refreshing next steps…");
-      await pollNextStepsUntilUpdated();
+      if ((rule.title || "").trim().toLowerCase() === "add .fmk file") {
+        setShowModal(true);
+      }
 
       setActionStatus("Done.");
     } catch (e: any) {
@@ -174,7 +145,6 @@ const EntityDetails: React.FC = () => {
     }
   };
 
-  // Initial load
   useEffect(() => {
     if (!entityTag) return;
     (async () => {
@@ -195,16 +165,13 @@ const EntityDetails: React.FC = () => {
   const isLoading =
     isEntityLoading || isCustomDataLoading || isCustomEventsLoading || isNextStepsLoading;
 
-  // Flatten all rules across groups
   const allRules = useMemo<RuleToComplete[]>(() => {
     if (!nextSteps?.nextSteps) return [];
     return nextSteps.nextSteps.flatMap((g) => g.rulesToComplete || []);
   }, [nextSteps]);
 
-  // Current level name from first group (your example shows one group)
   const currentLevelName = nextSteps?.nextSteps?.[0]?.currentLevel?.level?.name ?? undefined;
 
-  // No more steps?
   const noMoreSteps =
     !!nextSteps &&
     (nextSteps.nextSteps?.length === 0 ||
@@ -221,7 +188,6 @@ const EntityDetails: React.FC = () => {
     );
   }
 
-  // -------- New: Button visual styles (color + shadow) --------
   const getButtonStyle = (isActive: boolean): React.CSSProperties => ({
     padding: "10px 14px",
     borderRadius: 10,
@@ -238,10 +204,10 @@ const EntityDetails: React.FC = () => {
       : "0 4px 12px rgba(59, 91, 219, 0.18)",
     transition: "transform 120ms ease, box-shadow 150ms ease, background 150ms ease",
     outline: "none",
+    width: "100%",
   });
 
   const onButtonMouseDown = (e: React.MouseEvent<HTMLButtonElement>) => {
-    // provide a subtle pressed effect
     (e.currentTarget.style as any).transform = "translateY(1px) scale(0.99)";
     (e.currentTarget.style as any).boxShadow = "0 2px 8px rgba(59, 91, 219, 0.18)";
   };
@@ -252,7 +218,7 @@ const EntityDetails: React.FC = () => {
 
   return (
     <Section>
-      {/* Modal with clickable link */}
+      {/* Modal */}
       {showModal && (
         <div
           style={{
@@ -318,7 +284,6 @@ const EntityDetails: React.FC = () => {
         <div style={{ color: "crimson" }}>Failed to load next steps: {nextStepsError}</div>
       )}
 
-      {/* Completed state */}
       {noMoreSteps && (
         <div
           style={{
@@ -333,7 +298,6 @@ const EntityDetails: React.FC = () => {
         </div>
       )}
 
-      {/* When we have steps to complete */}
       {!noMoreSteps && (
         <>
           {currentLevelName && (
@@ -342,16 +306,16 @@ const EntityDetails: React.FC = () => {
             </div>
           )}
 
-          {/* Buttons for rule titles */}
+          {/* ⭐ UPDATED: Buttons stacked vertically ⭐ */}
           {allRules.length > 0 && (
             <div
               style={{
                 marginTop: 12,
                 display: "flex",
-                flexWrap: "wrap",
+                flexDirection: "column",
                 gap: 12,
-                justifyContent: "center", // <-- center buttons
-                alignItems: "center",
+                alignItems: "stretch",
+                width: "100%",
               }}
             >
               {allRules.map((rule) => {
@@ -369,7 +333,6 @@ const EntityDetails: React.FC = () => {
                     disabled={isRunningAction}
                     style={{
                       ...getButtonStyle(isActive),
-                      // Disabled visual
                       ...(isRunningAction
                         ? {
                             opacity: 0.7,
