@@ -194,42 +194,6 @@ const EntityDetails: React.FC = () => {
 
   return (
     <Section>
-      <Heading>
-        <CardTitle>Entity Details</CardTitle>
-      </Heading>
-
-      <div>
-        Below are the entity descriptor, custom data, custom events, and
-        scorecard next steps for the {context?.entity?.type} <strong>{entityTag}</strong>.
-        These are fetched from the Cortex REST API.
-      </div>
-
-      {/* ------------------ ENTITY DESCRIPTOR ------------------ */}
-      <div className="mt-4">
-        <strong>Entity Descriptor:</strong>
-      </div>
-      <JsonView data={entity} theme={context.theme} />
-
-      {/* ------------------ CUSTOM DATA ------------------ */}
-      {customData && (
-        <>
-          <div className="mt-4">
-            <strong>Custom Data:</strong>
-          </div>
-          <JsonView data={customData} theme={context.theme} />
-        </>
-      )}
-
-      {/* ------------------ CUSTOM EVENTS ------------------ */}
-      {customEvents && (
-        <>
-          <div className="mt-4">
-            <strong>Custom Events:</strong>
-          </div>
-          <JsonView data={customEvents} theme={context.theme} />
-        </>
-      )}
-
       {/* ------------------ NEXT STEPS ------------------ */}
       <div className="mt-4">
         <strong>Scorecard Next Steps (Scorecard: {SCORECARD_TAG}):</strong>
