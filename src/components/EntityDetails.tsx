@@ -75,110 +75,152 @@
 
 // export default EntityDetails;
 
-import React, { useEffect, useState } from 'react';
-import { createRoot } from 'react-dom/client';
-import { CortexApi } from '@cortexapps/plugin-core';
 
-// TODO: set your Scorecard tag here (or make it configurable via query param / small UI).
-const SCORECARD_TAG = 'production-readiness-scorecard';
+import type React from "react";
 
-type NextStep = {
-  currentLevel?: { level: { name: string; number: number } };
-  nextLevel?: { level: { name: string; number: number } };
-  rulesToComplete: { identifier: string; title: string; description?: string; expression?: string }[];
-};
+import { CardTitle, Loader } from "@cortexapps/react-plugin-ui";
 
-const App: React.FC = () => {
-  const [entityTag, setEntityTag] = useState<string | null>(null);
-  const [nextSteps, setNextSteps] = useState<NextStep[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+import { usePluginContextProvider } from "./PluginContextProvider";
+import useEntityDescriptor from "../hooks/useEntityDescriptor";
+import useEntityCustomData from "../hooks/useEntityCustomData";
+import useEntityCustomEvents from "../hooks/useEntityCustomEvents";
 
+import { Heading, Section, Subsection } from "./UtilityComponents";
+import JsonView from "./JsonView";
+import { useEffect, useState } from "react";
+
+const SCORECARD_TAG = "production-readiness-scorecard"; 
+// TODO: replace with your actual Scorecard tag
+
+const EntityDetails: React.FC = () => {
+  const context = usePluginContextProvider();
+  const entityTag = context?.entity?.tag ?? "";
+
+  const { entity, isLoading: isEntityLoading } = useEntityDescriptor({ entityTag });
+  const { customData, isLoading: isCustomDataLoading } = useEntityCustomData({ entityTag });
+  const { customEvents, isLoading: isCustomEventsLoading } = useEntityCustomEvents({ entityTag });
+
+  // -------------------------------
+  // NEW: next-step state
+  // -------------------------------
+  const [nextSteps, setNextSteps] = useState<any | null>(null);
+  const [isNextStepsLoading, setIsNextStepsLoading] = useState(false);
+  const [nextStepsError, setNextStepsError] = useState<string | null>(null);
+
+  // -------------------------------
+  // NEW: fetch next steps
+  // -------------------------------
   useEffect(() => {
-    (async () => {
-      try {
-        // 1) Get context (entity tag)
-        const ctx = await CortexApi.getContext();
-        const { entity } = ctx;
-        const tagFromContext = entity?.tag; // present in entity context pages
-        if (!tagFromContext) {
-          setError('No entity context found. Open this plugin from an entity page or supply an entityTag.');
-          return;
-        }
-        setEntityTag(tagFromContext);
+    if (!entityTag) return;
 
-        // 2) Fetch next steps for this entity & scorecard
-        setLoading(true);
+    const fetchNextSteps = async () => {
+      try {
+        setIsNextStepsLoading(true);
+        setNextStepsError(null);
+
         const url = `https://api.getcortexapp.com/api/v1/scorecards/${encodeURIComponent(
           SCORECARD_TAG
-        )}/next-steps?entityTag=${encodeURIComponent(tagFromContext)}`;
+        )}/next-steps?entityTag=${encodeURIComponent(entityTag)}`;
 
-        const res = await fetch(url, {
-          // No need to set Authorization here; proxy injects it if your proxy rule is configured.
-          method: 'GET',
-        });
+        // Cortex plugin fetch is auto‑proxied through the plugin proxy
+        // which attaches Authorization headers.  [1](https://www.npmjs.com/package/@cortexapps/plugin-core/v/2.1.3)
+        const response = await fetch(url);
 
-        if (res.status === 404) {
-          // Scorecard not found (or mis-tagged)
-          setError(`Scorecard '${SCORECARD_TAG}' or entity '${tagFromContext}' not found (404).`);
-          setLoading(false);
-          return;
-        }
-        if (!res.ok) {
-          const body = await res.text();
-          throw new Error(`Cortex API error ${res.status}: ${body}`);
+        if (!response.ok) {
+          const body = await response.text();
+          throw new Error(`Error ${response.status}: ${body}`);
         }
 
-        const json = await res.json() as { nextSteps: NextStep[] };
-        setNextSteps(json.nextSteps || []);
-      } catch (e: any) {
-        setError(e?.message ?? String(e));
+        const json = await response.json(); // Shape documented by Scorecards API [2](https://docs.cortex.io/api/readme/scorecards)
+        setNextSteps(json);
+      } catch (err: any) {
+        setNextStepsError(err?.message ?? "Unknown error");
       } finally {
-        setLoading(false);
+        setIsNextStepsLoading(false);
       }
-    })();
-  }, []);
+    };
 
-  if (loading) return <div style={{ padding: 16 }}>Loading next steps…</div>;
-  if (error)   return <div style={{ padding: 16, color: 'crimson' }}>{error}</div>;
-  if (!nextSteps) return null;
+    fetchNextSteps();
+  }, [entityTag]);
+
+  const isLoading =
+    isEntityLoading ||
+    isCustomDataLoading ||
+    isCustomEventsLoading ||
+    isNextStepsLoading;
+
+  // -------------------------------
+  // LOADING
+  // -------------------------------
+  if (isLoading) {
+    return <Loader size="large" />;
+  }
+
+  // -------------------------------
+  // NO ENTITY
+  // -------------------------------
+  if (!entityTag) {
+    return (
+      <Section>
+        <Heading>Entity Details</Heading>
+        <Subsection>No entity selected.</Subsection>
+      </Section>
+    );
+  }
 
   return (
-    <div style={{ padding: 16 }}>
-      <h2>Scorecard next steps</h2>
-      <div style={{ marginBottom: 8, color: '#666' }}>
-        <strong>Scorecard:</strong> {SCORECARD_TAG} &nbsp;|&nbsp; <strong>Entity:</strong> {entityTag}
+    <Section>
+      <Heading>
+        <CardTitle>Entity Details</CardTitle>
+      </Heading>
+
+      <div>
+        Below are the entity descriptor, custom data, custom events, and
+        scorecard next steps for the {context?.entity?.type} <strong>{entityTag}</strong>.
+        These are fetched from the Cortex REST API.
       </div>
 
-      {nextSteps.length === 0 ? (
-        <div>🎉 No outstanding rules — you’re at the highest level.</div>
-      ) : (
-        nextSteps.map((ns, i) => (
-          <div key={i} style={{ border: '1px solid #eee', borderRadius: 8, padding: 12, marginBottom: 12 }}>
-            <div style={{ marginBottom: 8 }}>
-              <strong>Current level:</strong> {ns.currentLevel?.level.name} &nbsp;→&nbsp;
-              <strong>Next level:</strong> {ns.nextLevel?.level.name}
-            </div>
-            <ol style={{ marginTop: 8 }}>
-              {ns.rulesToComplete.map(rule => (
-                <li key={rule.identifier} style={{ marginBottom: 6 }}>
-                  <div><strong>{rule.title || rule.identifier}</strong></div>
-                  {rule.description && <div style={{ color: '#555' }}>{rule.description}</div>}
-                  {rule.expression && (
-                    <pre style={{
-                      background: '#f9f9f9',
-                      padding: 8,
-                      borderRadius: 6,
-                      overflowX: 'auto'
-                    }}>{rule.expression}</pre>
-                  )}
-                </li>
-              ))}
-            </ol>
+      {/* ------------------ ENTITY DESCRIPTOR ------------------ */}
+      <div className="mt-4">
+        <strong>Entity Descriptor:</strong>
+      </div>
+      <JsonView data={entity} theme={context.theme} />
+
+      {/* ------------------ CUSTOM DATA ------------------ */}
+      {customData && (
+        <>
+          <div className="mt-4">
+            <strong>Custom Data:</strong>
           </div>
-        ))
+          <JsonView data={customData} theme={context.theme} />
+        </>
       )}
-    </div>
+
+      {/* ------------------ CUSTOM EVENTS ------------------ */}
+      {customEvents && (
+        <>
+          <div className="mt-4">
+            <strong>Custom Events:</strong>
+          </div>
+          <JsonView data={customEvents} theme={context.theme} />
+        </>
+      )}
+
+      {/* ------------------ NEW: NEXT STEPS ------------------ */}
+      <div className="mt-4">
+        <strong>Scorecard Next Steps (Scorecard: {SCORECARD_TAG}):</strong>
+      </div>
+
+      {nextStepsError && (
+        <div style={{ color: "crimson" }}>
+          Failed to load next steps: {nextStepsError}
+        </div>
+      )}
+
+      {nextSteps && (
+        <JsonView data={nextSteps} theme={context.theme} />
+      )}
+    </Section>
   );
 };
 
