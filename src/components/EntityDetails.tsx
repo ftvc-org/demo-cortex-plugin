@@ -1,81 +1,3 @@
-// import type React from "react";
-
-// import { CardTitle, Loader } from "@cortexapps/react-plugin-ui";
-
-// import { usePluginContextProvider } from "./PluginContextProvider";
-// import useEntityDescriptor from "../hooks/useEntityDescriptor";
-// import useEntityCustomData from "../hooks/useEntityCustomData";
-// import useEntityCustomEvents from "../hooks/useEntityCustomEvents";
-
-// import { Heading, Section, Subsection } from "./UtilityComponents";
-// import JsonView from "./JsonView";
-
-// const EntityDetails: React.FC = () => {
-//   const context = usePluginContextProvider();
-//   const entityTag = context?.entity?.tag ?? "";
-//   const { entity, isLoading: isEntityLoading } = useEntityDescriptor({
-//     entityTag,
-//   });
-//   const { customData, isLoading: isCustomDataLoading } = useEntityCustomData({
-//     entityTag,
-//   });
-//   const { customEvents, isLoading: isCustomEventsLoading } =
-//     useEntityCustomEvents({ entityTag });
-
-//   const isLoading =
-//     isEntityLoading || isCustomDataLoading || isCustomEventsLoading;
-
-//   if (isLoading) {
-//     return <Loader size="large" />;
-//   }
-
-//   if (!entityTag) {
-//     return (
-//       <Section>
-//         <Heading>Entity Details</Heading>
-//         <Subsection>No entity selected.</Subsection>
-//       </Section>
-//     );
-//   }
-
-//   return (
-//     <Section>
-//       <Heading>
-//         <CardTitle>Entity Details</CardTitle>
-//       </Heading>
-//       <div>
-//         Below are the entity descriptor, entity custom data and entity custom
-//         events for the {context?.entity?.type} {entityTag}. These are fetched
-//         from the Cortex REST API and returned by the useEntityDescriptor,
-//         useEntityCustomData and useEntityCustomEvents hooks.
-//       </div>
-//       <div className="mt-4">
-//         <strong>Entity Descriptor:</strong>
-//       </div>
-//       <JsonView data={entity} theme={context.theme} />
-//       {customData && (
-//         <>
-//           <div className="mt-4">
-//             <strong>Custom Data:</strong>
-//           </div>
-//           <JsonView data={customData} theme={context.theme} />
-//         </>
-//       )}
-//       {customEvents && (
-//         <>
-//           <div className="mt-4">
-//             <strong>Custom Events:</strong>
-//           </div>
-//           <JsonView data={customEvents} theme={context.theme} />
-//         </>
-//       )}
-//     </Section>
-//   );
-// };
-
-// export default EntityDetails;
-
-
 import type React from "react";
 
 import { CardTitle, Loader } from "@cortexapps/react-plugin-ui";
@@ -89,19 +11,27 @@ import { Heading, Section, Subsection } from "./UtilityComponents";
 import JsonView from "./JsonView";
 import { useEffect, useMemo, useState } from "react";
 
-const SCORECARD_TAG = "empty-scorecard-with-levels"; 
-// TODO: replace with your actual Scorecard tag
+// -------------------------------
+// CONFIG: update these for your env
+// -------------------------------
+const SCORECARD_TAG = "empty-scorecard-with-levels";  // scorecard tag to evaluate
+const GITHUB_OWNER  = "ftvc-org";            // <-- set
+const GITHUB_REPO   = "sample-java-ab";                   // <-- set
+const BRANCH_NAME   = "main";                        // <-- protect this branch
 
+// -------------------------------
+// TYPES for next-steps
+// -------------------------------
 type RuleToComplete = {
   identifier: string;
   title?: string;
-  description?: string;
-  expression?: string;
+  description?: string | null;
+  expression?: string | null;
 };
 
 type NextStepGroup = {
   currentLevel?: { level: { name: string; number: number } };
-  nextLevel?: { level: { name: string; number: number } };
+  nextLevel?:   { level: { name: string; number: number } };
   rulesToComplete: RuleToComplete[];
 };
 
@@ -113,6 +43,7 @@ const EntityDetails: React.FC = () => {
   const context = usePluginContextProvider();
   const entityTag = context?.entity?.tag ?? "";
 
+  // (Keep your existing detail hooks if you still want them)
   const { entity, isLoading: isEntityLoading } = useEntityDescriptor({ entityTag });
   const { customData, isLoading: isCustomDataLoading } = useEntityCustomData({ entityTag });
   const { customEvents, isLoading: isCustomEventsLoading } = useEntityCustomEvents({ entityTag });
@@ -122,67 +53,162 @@ const EntityDetails: React.FC = () => {
   const [isNextStepsLoading, setIsNextStepsLoading] = useState(false);
   const [nextStepsError, setNextStepsError] = useState<string | null>(null);
 
-  // NEW: which rule is selected (to show details below the buttons)
+  // selection + action status
   const [selectedRuleId, setSelectedRuleId] = useState<string | null>(null);
+  const [isRunningAction, setIsRunningAction] = useState(false);
+  const [actionStatus, setActionStatus] = useState<string | null>(null);
 
-  // Fetch next steps
+  // -------------------------------
+  // Cortex helpers
+  // -------------------------------
+  const fetchNextSteps = async (): Promise<NextStepsResponse> => {
+    const url = `https://api.getcortexapp.com/api/v1/scorecards/${encodeURIComponent(
+      SCORECARD_TAG
+    )}/next-steps?entityTag=${encodeURIComponent(entityTag)}`;
+    const res = await fetch(url); // proxied by Cortex plugin runtime
+    if (!res.ok) throw new Error(`Next-steps error ${res.status}: ${await res.text()}`);
+    return (await res.json()) as NextStepsResponse; // per Scorecards API
+  };
+
+  const evaluateScorecard = async () => {
+    const url = `https://api.getcortexapp.com/api/v1/scorecards/${encodeURIComponent(
+      SCORECARD_TAG
+    )}/entity/${encodeURIComponent(entityTag)}/scores`;
+    const res = await fetch(url, { method: "POST" }); // 200 or 409 (already evaluating)
+    if (res.status === 409) return;
+    if (!res.ok) throw new Error(`Evaluate error ${res.status}: ${await res.text()}`);
+  };
+
+  // -------------------------------
+  // GitHub: Branch Protection
+  // -------------------------------
+  // PUT /repos/{owner}/{repo}/branches/{branch}/protection
+  // See REST API docs for schema & headers. Requires admin.  (Use proxy to inject token+version header)
+  const ensureBranchProtection = async () => {
+    const url = `https://api.github.com/repos/${encodeURIComponent(GITHUB_OWNER)}/${encodeURIComponent(
+      GITHUB_REPO
+    )}/branches/${encodeURIComponent(BRANCH_NAME)}/protection`;
+
+    // Minimal, sensible defaults; extend as needed
+    const policy = {
+      enforce_admins: true,
+      required_pull_request_reviews: {
+        required_approving_review_count: 1,
+        dismiss_stale_reviews: true,
+        require_code_owner_reviews: false
+      },
+      required_conversation_resolution: true,
+      required_linear_history: true,
+      allow_force_pushes: false,
+      allow_deletions: false
+    };
+
+    const res = await fetch(url, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28"
+      },
+      body: JSON.stringify(policy)
+    });
+    if (!res.ok) throw new Error(`Branch protection error ${res.status}: ${await res.text()}`);
+    return res.json();
+  };
+
+  // -------------------------------
+  // Poll until fresh next steps are available / empty
+  // -------------------------------
+  const pollNextStepsUntilUpdated = async (maxAttempts = 10, intervalMs = 1500) => {
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const latest = await fetchNextSteps();
+      setNextSteps(latest);
+
+      const remaining =
+        latest.nextSteps?.reduce((acc, g) => acc + (g.rulesToComplete?.length || 0), 0) || 0;
+
+      if (remaining === 0) return latest; // completed
+      await new Promise((r) => setTimeout(r, intervalMs));
+    }
+    // final read
+    return await fetchNextSteps();
+  };
+
+  // -------------------------------
+  // One-click handler
+  // -------------------------------
+  const handleRuleClick = async (rule: RuleToComplete) => {
+    if (isRunningAction) return;
+
+    const id = rule.identifier || rule.title || null;
+    setSelectedRuleId(id);
+    setIsRunningAction(true);
+
+    try {
+      // 1) If title is "Branch Protection" → apply protection on 'main'
+      if ((rule.title || "").trim().toLowerCase() === "branch protection") {
+        setActionStatus(`Applying branch protection to ${GITHUB_OWNER}/${GITHUB_REPO}@${BRANCH_NAME}…`);
+        await ensureBranchProtection(); // GitHub branch protection  [1](https://docs.cortex.io/streamline/plugins)
+      }
+
+      // 2) Re-evaluate scorecard
+      setActionStatus("Triggering scorecard evaluation…");
+      await evaluateScorecard(); // Cortex evaluate  [3](https://www.codegenes.net/blog/basic-http-and-bearer-token-authentication/)
+
+      // 3) Poll for fresh next steps
+      setActionStatus("Refreshing next steps…");
+      await pollNextStepsUntilUpdated();
+
+      setActionStatus("Done.");
+    } catch (e: any) {
+      setActionStatus(`Failed: ${e?.message ?? e}`);
+    } finally {
+      setIsRunningAction(false);
+      setTimeout(() => setActionStatus(null), 2000);
+    }
+  };
+
+  // Initial load
   useEffect(() => {
     if (!entityTag) return;
-
-    const fetchNextSteps = async () => {
+    (async () => {
       try {
         setIsNextStepsLoading(true);
         setNextStepsError(null);
         setSelectedRuleId(null);
-
-        const url = `https://api.getcortexapp.com/api/v1/scorecards/${encodeURIComponent(
-          SCORECARD_TAG
-        )}/next-steps?entityTag=${encodeURIComponent(entityTag)}`;
-
-        // In Cortex plugins, fetch() is proxied and authorized automatically. [2](https://www.npmjs.com/package/@cortexapps/plugin-core/v/2.1.3)
-        const response = await fetch(url);
-
-        if (!response.ok) {
-          const body = await response.text();
-          throw new Error(`Error ${response.status}: ${body}`);
-        }
-
-        const json = (await response.json()) as NextStepsResponse; // per Scorecards API [1](https://docs.cortex.io/api/readme/scorecards)
+        const json = await fetchNextSteps();
         setNextSteps(json);
       } catch (err: any) {
         setNextStepsError(err?.message ?? "Unknown error");
       } finally {
         setIsNextStepsLoading(false);
       }
-    };
-
-    fetchNextSteps();
+    })();
   }, [entityTag]);
 
   const isLoading =
-    isEntityLoading ||
-    isCustomDataLoading ||
-    isCustomEventsLoading ||
-    isNextStepsLoading;
+    isEntityLoading || isCustomDataLoading || isCustomEventsLoading || isNextStepsLoading;
 
-  // convenience: flatten all rules from all next-step groups
+  // Flatten all rules across groups
   const allRules = useMemo<RuleToComplete[]>(() => {
     if (!nextSteps?.nextSteps) return [];
-    return nextSteps.nextSteps.flatMap(group => group.rulesToComplete || []);
+    return nextSteps.nextSteps.flatMap((g) => g.rulesToComplete || []);
   }, [nextSteps]);
 
-  // the currently selected rule details
-  const selectedRule = useMemo(() => {
-    if (!selectedRuleId) return null;
-    return allRules.find(r => (r.identifier || r.title) === selectedRuleId) || null;
-  }, [selectedRuleId, allRules]);
+  // Current level name from first group (your example shows one group)
+  const currentLevelName =
+    nextSteps?.nextSteps?.[0]?.currentLevel?.level?.name ?? undefined;
 
-  // LOADING
-  if (isLoading) {
-    return <Loader size="large" />;
-  }
+  // No more steps?
+  const noMoreSteps =
+    !!nextSteps &&
+    (
+      nextSteps.nextSteps?.length === 0 ||
+      nextSteps.nextSteps?.every((g) => (g.rulesToComplete?.length || 0) === 0)
+    );
 
-  // NO ENTITY
+  if (isLoading) return <Loader size="large" />;
+
   if (!entityTag) {
     return (
       <Section>
@@ -194,88 +220,83 @@ const EntityDetails: React.FC = () => {
 
   return (
     <Section>
-      {/* ------------------ NEXT STEPS ------------------ */}
+      <Heading>
+        <CardTitle>Entity Details</CardTitle>
+      </Heading>
+
+      {/* ---- NEXT STEPS UI ---- */}
       <div className="mt-4">
         <strong>Scorecard Next Steps (Scorecard: {SCORECARD_TAG}):</strong>
       </div>
 
+      {actionStatus && (
+        <div style={{ marginTop: 6, color: isRunningAction ? "#333" : "#5a5" }}>
+          {actionStatus}
+        </div>
+      )}
+
       {nextStepsError && (
-        <div style={{ color: "crimson" }}>
-          Failed to load next steps: {nextStepsError}
+        <div style={{ color: "crimson" }}>Failed to load next steps: {nextStepsError}</div>
+      )}
+
+      {/* Completed state */}
+      {noMoreSteps && (
+        <div style={{ marginTop: 10, padding: 10, background: "#f0fff4", border: "1px solid #b7ebc6", borderRadius: 6 }}>
+          <strong>You have completed all the levels of this scorecard.</strong>
         </div>
       )}
 
-      {/* Buttons with rule titles */}
-      {allRules.length > 0 && (
-        <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 8 }}>
-          {allRules.map((rule) => {
-            const id = rule.identifier || rule.title || "";
-            const label = rule.title || rule.identifier || "Untitled rule";
-            const isActive = selectedRuleId === id;
-
-            return (
-              <button
-                key={id}
-                onClick={() => setSelectedRuleId(isActive ? null : id)}
-                style={{
-                  padding: "6px 10px",
-                  borderRadius: 6,
-                  border: isActive ? "2px solid #4a74f5" : "1px solid #ccc",
-                  background: isActive ? "#eef2ff" : "#fff",
-                  cursor: "pointer",
-                  fontSize: 13
-                }}
-                title={rule.description || label}
-              >
-                {label}
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Selected rule details (toggle display) */}
-      {selectedRule && (
-        <div
-          style={{
-            marginTop: 12,
-            padding: 12,
-            border: "1px solid #eee",
-            borderRadius: 8,
-            background: "#fafafa"
-          }}
-        >
-          <div style={{ fontWeight: 600, marginBottom: 6 }}>
-            {selectedRule.title || selectedRule.identifier}
-          </div>
-          {selectedRule.description && (
-            <div style={{ marginBottom: 6 }}>{selectedRule.description}</div>
+      {/* When we have steps to complete */}
+      {!noMoreSteps && (
+        <>
+          {currentLevelName && (
+            <div style={{ marginTop: 8 }}>
+              <strong>Current level:</strong> {currentLevelName}
+            </div>
           )}
-          {selectedRule.expression && (
-            <pre
-              style={{
-                background: "#f5f5f5",
-                padding: 8,
-                borderRadius: 6,
-                overflowX: "auto",
-                margin: 0
-              }}
-            >
-              {selectedRule.expression}
-            </pre>
+
+          {/* Buttons for rule titles */}
+          {allRules.length > 0 && (
+            <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {allRules.map((rule) => {
+                const id = rule.identifier || rule.title || "";
+                const label = rule.title || rule.identifier || "Untitled rule";
+                const isActive = selectedRuleId === id;
+
+                return (
+                  <button
+                    key={id}
+                    onClick={() => handleRuleClick(rule)}
+                    disabled={isRunningAction}
+                    style={{
+                      padding: "6px 10px",
+                      borderRadius: 6,
+                      border: isActive ? "2px solid #4a74f5" : "1px solid #ccc",
+                      background: isRunningAction ? "#f3f3f3" : isActive ? "#eef2ff" : "#fff",
+                      cursor: isRunningAction ? "not-allowed" : "pointer",
+                      fontSize: 13
+                    }}
+                    title={rule.description || label}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
           )}
-        </div>
+        </>
       )}
 
-      {/* Raw JSON (optional—kept for debugging/visibility) */}
+      {/* Optional: keep raw JSON for visibility */}
       {nextSteps && (
         <>
-          <div className="mt-4">
-            <strong>Raw Next Steps JSON:</strong>
-          </div>
+          <div className="mt-4"><strong>Raw Next Steps JSON:</strong></div>
           <JsonView data={nextSteps} theme={context.theme} />
         </>
       )}
+
+      {/* (Optional) Your existing descriptor/custom data/events blocks can remain below */}
+      {/* ... */}
     </Section>
   );
 };
