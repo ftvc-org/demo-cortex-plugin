@@ -89,7 +89,7 @@ import { Heading, Section, Subsection } from "./UtilityComponents";
 import JsonView from "./JsonView";
 import { useEffect, useState } from "react";
 
-const SCORECARD_TAG = "production-readiness-scorecard"; 
+const SCORECARD_TAG = "empty-scorecard-with-levels"; 
 // TODO: replace with your actual Scorecard tag
 
 const EntityDetails: React.FC = () => {
