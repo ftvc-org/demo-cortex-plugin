@@ -31,8 +31,8 @@ export const AppTabs: React.FC = () => {
 
   const tabRoutes: TabRoute[] = [
     { label: "Components", path: "/basic", element: <Components /> },
-    { label: "Context", path: "/context", element: <PluginContext /> },
-    // { label: "Entity", path: "/entity", element: <EntityDetails /> },
+    // { label: "Context", path: "/context", element: <PluginContext /> },
+    { label: "Entity", path: "/entity", element: <EntityDetails /> },
     // { label: "Colors", path: "/colors", element: <ColorSwatches /> },
     // { label: "Proxy", path: "/proxy", element: <ProxyTest /> },
   ];
