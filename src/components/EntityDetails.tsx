@@ -17,7 +17,8 @@ import { useEffect, useMemo, useState } from "react";
 const SCORECARD_TAG = "empty-scorecard-with-levels";  // scorecard tag to evaluate
 const GITHUB_OWNER  = "ftvc-org";            // <-- set
 const GITHUB_REPO   = "sample-java-ab";                   // <-- set
-const BRANCH_NAME   = "main";                        // <-- protect this branch
+const BRANCH_NAME   = "main";    
+const [showModal, setShowModal] = useState(false);                    // <-- protect this branch
 
 // -------------------------------
 // TYPES for next-steps
@@ -148,8 +149,9 @@ const EntityDetails: React.FC = () => {
     try {
       // 1) If title is "Branch Protection" → apply protection on 'main'
       if ((rule.title || "").trim().toLowerCase() === "branch protection") {
-        setActionStatus(`Applying branch protection to ${GITHUB_OWNER}/${GITHUB_REPO}@${BRANCH_NAME}…`);
-        await ensureBranchProtection(); // GitHub branch protection  [1](https://docs.cortex.io/streamline/plugins)
+        // setActionStatus(`Applying branch protection to ${GITHUB_OWNER}/${GITHUB_REPO}@${BRANCH_NAME}…`);
+        // await ensureBranchProtection(); // GitHub branch protection  [1](https://docs.cortex.io/streamline/plugins)
+        setShowModal(true);
       }
 
       // 2) Re-evaluate scorecard
@@ -222,6 +224,48 @@ const EntityDetails: React.FC = () => {
   return (
     <Section>
 
+      {showModal && (
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          background: "rgba(0,0,0,0.4)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 9999
+        }}
+      >
+        <div
+          style={{
+            background: "#fff",
+            padding: 20,
+            borderRadius: 8,
+            width: 320,
+            textAlign: "center"
+          }}
+        >
+          <h3>Action Required</h3>
+          <p>Please Follow the steps Given in below page to pass this rule</p>
+
+          <a
+            href="https://enterprise-confluence.onefiserv.net/"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: "#1a73e8", fontWeight: "bold" }}
+          >
+            Open Page
+          </a>
+
+          <div style={{ marginTop: 20 }}>
+            <button onClick={() => setShowModal(false)}>Close</button>
+          </div>
+        </div>
+      </div>
+    )}
       {actionStatus && (
         <div style={{ marginTop: 6, color: isRunningAction ? "#333" : "#5a5" }}>
           {actionStatus}

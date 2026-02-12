@@ -23,18 +23,14 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
 
-    - name: Build
-      run: |
-        npm install
-        npx webpack
-        ls -latr
+  
 
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v4
       with:
         name: build-dist
-        path: ./dist 
-        
+        path: ./dist
+ 
     - name: Download a Build Artifact
       uses: actions/download-artifact@v7.0.0
       with:
