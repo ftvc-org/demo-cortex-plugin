@@ -221,6 +221,35 @@ const EntityDetails: React.FC = () => {
     );
   }
 
+  // -------- New: Button visual styles (color + shadow) --------
+  const getButtonStyle = (isActive: boolean): React.CSSProperties => ({
+    padding: "10px 14px",
+    borderRadius: 10,
+    border: isActive ? "2px solid #3b5bdb" : "1px solid #c9d1ff",
+    background: isActive
+      ? "linear-gradient(180deg, #e9edff 0%, #dfe7ff 100%)"
+      : "linear-gradient(180deg, #eef2ff 0%, #e2e8ff 100%)",
+    color: "#1f2a56",
+    cursor: isRunningAction ? "not-allowed" : "pointer",
+    fontSize: 13,
+    fontWeight: 600,
+    boxShadow: isActive
+      ? "0 6px 18px rgba(59, 91, 219, 0.25)"
+      : "0 4px 12px rgba(59, 91, 219, 0.18)",
+    transition: "transform 120ms ease, box-shadow 150ms ease, background 150ms ease",
+    outline: "none",
+  });
+
+  const onButtonMouseDown = (e: React.MouseEvent<HTMLButtonElement>) => {
+    // provide a subtle pressed effect
+    (e.currentTarget.style as any).transform = "translateY(1px) scale(0.99)";
+    (e.currentTarget.style as any).boxShadow = "0 2px 8px rgba(59, 91, 219, 0.18)";
+  };
+  const onButtonMouseUpOrLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
+    (e.currentTarget.style as any).transform = "translateY(0) scale(1)";
+    (e.currentTarget.style as any).boxShadow = "0 4px 12px rgba(59, 91, 219, 0.18)";
+  };
+
   return (
     <Section>
       {/* Modal with clickable link */}
@@ -246,10 +275,11 @@ const EntityDetails: React.FC = () => {
               borderRadius: 8,
               width: 320,
               textAlign: "center",
+              boxShadow: "0 10px 24px rgba(0,0,0,0.15)",
             }}
           >
-            <h3>Action Required</h3>
-            <p>Please follow the steps given in the page below to pass this rule.</p>
+            <h5>Action Required</h5>
+            <h6>Please follow the steps given in the page below to pass this rule.</h6>
 
             <a
               href="https://enterprise-confluence.onefiserv.net/"
@@ -261,7 +291,18 @@ const EntityDetails: React.FC = () => {
             </a>
 
             <div style={{ marginTop: 20 }}>
-              <button onClick={() => setShowModal(false)}>Close</button>
+              <button
+                onClick={() => setShowModal(false)}
+                style={{
+                  padding: "8px 12px",
+                  borderRadius: 8,
+                  border: "1px solid #ddd",
+                  background: "#f6f8ff",
+                  cursor: "pointer",
+                }}
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
@@ -303,7 +344,16 @@ const EntityDetails: React.FC = () => {
 
           {/* Buttons for rule titles */}
           {allRules.length > 0 && (
-            <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 8 }}>
+            <div
+              style={{
+                marginTop: 12,
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 12,
+                justifyContent: "center", // <-- center buttons
+                alignItems: "center",
+              }}
+            >
               {allRules.map((rule) => {
                 const id = rule.identifier || rule.title || "";
                 const label = rule.title || rule.identifier || "Untitled rule";
@@ -313,14 +363,19 @@ const EntityDetails: React.FC = () => {
                   <button
                     key={id}
                     onClick={() => handleRuleClick(rule)}
+                    onMouseDown={onButtonMouseDown}
+                    onMouseUp={onButtonMouseUpOrLeave}
+                    onMouseLeave={onButtonMouseUpOrLeave}
                     disabled={isRunningAction}
                     style={{
-                      padding: "6px 10px",
-                      borderRadius: 6,
-                      border: isActive ? "2px solid #4a74f5" : "1px solid #ccc",
-                      background: isRunningAction ? "#f3f3f3" : isActive ? "#eef2ff" : "#fff",
-                      cursor: isRunningAction ? "not-allowed" : "pointer",
-                      fontSize: 13,
+                      ...getButtonStyle(isActive),
+                      // Disabled visual
+                      ...(isRunningAction
+                        ? {
+                            opacity: 0.7,
+                            background: "linear-gradient(180deg, #f3f4f8 0%, #eceef7 100%)",
+                          }
+                        : {}),
                     }}
                     title={rule.description || label}
                   >
