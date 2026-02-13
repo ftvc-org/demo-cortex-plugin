@@ -63,7 +63,7 @@ jobs:
           "iconTag": "text",
           "isDraft": true,
           "minimumRoleRequired": "VIEWER",
-          "name": "Test",
+          "name": "Scorecard Action item",
           "proxyTag": "text",
           "version": "text"
         }
