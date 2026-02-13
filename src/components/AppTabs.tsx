@@ -15,6 +15,7 @@ import ProxyTest from "./ProxyTest";
 
 import "../baseStyles.css";
 import OnboardingScorecard from "./OnboardingScorecard";
+import CodeQuality from "./CodeQuality";
 
 interface TabRoute {
   label: string;
@@ -28,7 +29,7 @@ export const AppTabs: React.FC = () => {
 
   const tabRoutes: TabRoute[] = [
     { label: "Test Scorecard", path: "/basic", element: <Components /> },
-    // { label: "Code Quality", path: "/context", element: <CodeQuality /> },
+    { label: "Code Quality", path: "/context", element: <CodeQuality /> },
     // { label: "Entity", path: "/entity", element: <EntityDetails /> },
     // { label: "Colors", path: "/colors", element: <ColorSwatches /> },
     // { label: "Proxy", path: "/proxy", element: <ProxyTest /> },
