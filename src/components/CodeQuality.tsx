@@ -317,7 +317,7 @@ const CodeQuality: React.FC = () => {
               role="alert"
               aria-live="polite"
             >
-              Your Service has not completed any level of this scorecard
+              Your Service has not completed any level of this scorecard. Please complete the following rules to pass the first level
             </div>
           )
         )}
@@ -365,15 +365,6 @@ const CodeQuality: React.FC = () => {
               })}
             </div>
           )}
-        </>
-      )}
-      {/* Raw JSON (optional—kept for debugging/visibility) */}
-      {nextSteps && (
-        <>
-          <div className="mt-4">
-            <strong>Raw Next Steps JSON:</strong>
-          </div>
-          <JsonView data={nextSteps} theme={context.theme} />
         </>
       )}
     </Section>
