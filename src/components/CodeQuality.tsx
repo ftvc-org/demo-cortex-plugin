@@ -351,9 +351,18 @@ const CodeQuality: React.FC = () => {
           )}
         </>
       )}
+      {/* Raw JSON (optional—kept for debugging/visibility) */}
+      {nextSteps && (
+        <>
+          <div className="mt-4">
+            <strong>Raw Next Steps JSON:</strong>
+          </div>
+          <JsonView data={nextSteps} theme={context.theme} />
+        </>
+      )}
     </Section>
-
   );
 };
 
 export default CodeQuality;
+
