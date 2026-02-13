@@ -301,11 +301,27 @@ const CodeQuality: React.FC = () => {
 
       {!noMoreSteps && (
         <>
-          {currentLevelName && (
+         {/* Current level (or fallback when empty) */}
+        {(!noMoreSteps) && (
+          currentLevelName ? (
             <div style={{ marginTop: 8 }}>
               <strong>Current level:</strong> {currentLevelName}
             </div>
-          )}
+          ) : (
+            <div
+              style={{
+                marginTop: 8,
+                color: "red",
+                fontWeight: 600,
+              }}
+              role="alert"
+              aria-live="polite"
+            >
+              Your Service has not completed any level of this scorecard
+            </div>
+          )
+        )}
+
 
           {/* ⭐ UPDATED: Buttons stacked vertically ⭐ */}
           {allRules.length > 0 && (
