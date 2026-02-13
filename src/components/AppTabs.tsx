@@ -64,7 +64,18 @@ export const AppTabs: React.FC = () => {
           
           {/* Fallback simple select if your UI kit doesn't have Select */}
           <select
-            className="border rounded px-2 py-1 text-sm"
+            className="
+            w-72 sm:w-80 md:w-96
+            px-3 py-2
+            text-sm
+            rounded-md
+            border border-gray-300
+            bg-white text-gray-800
+            shadow-sm
+            transition
+            hover:border-gray-400
+            focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500
+            disabled:opacity-60 disabled:cursor-not-allowed"
             value={currentPath}
             onChange={(e) => navigate(e.target.value)}
           >
