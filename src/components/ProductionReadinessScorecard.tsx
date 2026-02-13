@@ -389,7 +389,7 @@ import { useEffect, useMemo, useState } from "react";
 // -------------------------------
 // CONFIG: update these for your env
 // -------------------------------
-const SCORECARD_TAG = "code-quality-metrics"; 
+const SCORECARD_TAG = "production-readiness"; 
 const GITHUB_OWNER = "ftvc-org";                      
 const GITHUB_REPO = "sample-java-ab";                 
 const BRANCH_NAME = "main";                           
