@@ -130,7 +130,7 @@ const Components: React.FC = () => {
 
     try {
       if ((rule.title || "").trim().toLowerCase() === "branch protection") {
-        setShowModal(true);
+      
       }
       if ((rule.title || "").trim().toLowerCase() === "add .fmk file") {
         setShowModal(true);
