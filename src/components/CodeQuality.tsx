@@ -39,7 +39,7 @@ type NextStepsResponse = {
   nextSteps: NextStepGroup[];
 };
 
-const Components: React.FC = () => {
+const CodeQuality: React.FC = () => {
   const context = usePluginContextProvider();
   const entityTag = context?.entity?.tag ?? "";
 
