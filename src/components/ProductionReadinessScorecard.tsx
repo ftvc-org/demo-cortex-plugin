@@ -129,10 +129,52 @@ const ProductionReadinessScorecard: React.FC = () => {
     setIsRunningAction(true);
 
     try {
-      if ((rule.title || "").trim().toLowerCase() === "branch protection") {
-        
+      if ((rule.title || "").trim().toLowerCase() === "outgoing dependency set") {
+        setShowModal(true);
       }
-      if ((rule.title || "").trim().toLowerCase() === "add .fmk file") {
+      if ((rule.title || "").trim().toLowerCase() === "branch protextion set") {
+        setShowModal(true);
+      }
+      if ((rule.title || "").trim().toLowerCase() === "logs are linked") {
+        setShowModal(true);
+      }
+      if ((rule.title || "").trim().toLowerCase() === "owners are set") {
+        setShowModal(true);
+      }
+      if ((rule.title || "").trim().toLowerCase() === "communication channel is set") {
+        setShowModal(true);
+      }
+      if ((rule.title || "").trim().toLowerCase() === "datadog monitor is set") {
+        setShowModal(true);
+      }
+      if ((rule.title || "").trim().toLowerCase() === "runbook is linked") {
+        setShowModal(true);
+      }
+      if ((rule.title || "").trim().toLowerCase() === "no vulnerability") {
+        setShowModal(true);
+      }
+      if ((rule.title || "").trim().toLowerCase() === "ci/cd pipeline is set") {
+        setShowModal(true);
+      }
+      if ((rule.title || "").trim().toLowerCase() === "last commit within 1 week") {
+        setShowModal(true);
+      }
+      if ((rule.title || "").trim().toLowerCase() === "incedent playbook created") {
+        setShowModal(true);
+      }
+      if ((rule.title || "").trim().toLowerCase() === "merge approval") {
+        setShowModal(true);
+      }
+      if ((rule.title || "").trim().toLowerCase() === "2 tiers in on call escalation policy") {
+        setShowModal(true);
+      }
+      if ((rule.title || "").trim().toLowerCase() === "code coverage > 80%") {
+        setShowModal(true);
+      }
+      if ((rule.title || "").trim().toLowerCase() === "slo are met") {
+        setShowModal(true);
+      }
+      if ((rule.title || "").trim().toLowerCase() === "less than 2 incidents in last 2 weeks") {
         setShowModal(true);
       }
 

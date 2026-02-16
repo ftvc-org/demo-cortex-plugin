@@ -129,10 +129,25 @@ const CodeQuality: React.FC = () => {
     setIsRunningAction(true);
 
     try {
-      if ((rule.title || "").trim().toLowerCase() === "branch protection") {
-        
+      if ((rule.title || "").trim().toLowerCase() === "no critical or high severity vulnerabilities") {
+        setShowModal(true);
       }
-      if ((rule.title || "").trim().toLowerCase() === "add .fmk file") {
+      if ((rule.title || "").trim().toLowerCase() === "high code coverage") {
+        setShowModal(true);
+      }
+      if ((rule.title || "").trim().toLowerCase() === "low code duplication") {
+        setShowModal(true);
+      }
+      if ((rule.title || "").trim().toLowerCase() === "minimal open pull requests") {
+        setShowModal(true);
+      }
+      if ((rule.title || "").trim().toLowerCase() === "low code complexity") {
+        setShowModal(true);
+      }
+      if ((rule.title || "").trim().toLowerCase() === "high test coverage(branch)") {
+        setShowModal(true);
+      }
+      if ((rule.title || "").trim().toLowerCase() === "high test coverage (line)") {
         setShowModal(true);
       }
 

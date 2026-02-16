@@ -130,9 +130,18 @@ const Components: React.FC = () => {
 
     try {
       if ((rule.title || "").trim().toLowerCase() === "branch protection") {
-      
+          setShowModal(true);
       }
-      if ((rule.title || "").trim().toLowerCase() === "add .fmk file") {
+      if ((rule.title || "").trim().toLowerCase() === "add .gitignore file") {
+        setShowModal(true);
+      }
+       if ((rule.title || "").trim().toLowerCase() === "git repo present") {
+        setShowModal(true);
+      }
+       if ((rule.title || "").trim().toLowerCase() === "add readme.md file") {
+        setShowModal(true);
+      }
+       if ((rule.title || "").trim().toLowerCase() === "add entity owner") {
         setShowModal(true);
       }
 
