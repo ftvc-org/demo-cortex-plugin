@@ -132,7 +132,7 @@ const ProductionReadinessScorecard: React.FC = () => {
       if ((rule.title || "").trim().toLowerCase() === "outgoing dependency set") {
         setShowModal(true);
       }
-      if ((rule.title || "").trim().toLowerCase() === "branch protextion set") {
+      if ((rule.title || "").trim().toLowerCase() === "branch protection set") {
         setShowModal(true);
       }
       if ((rule.title || "").trim().toLowerCase() === "logs are linked") {
